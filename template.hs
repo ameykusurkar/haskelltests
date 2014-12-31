@@ -1,4 +1,5 @@
 import Data.List
+import Data.Maybe
 
 type Index = Int
 
@@ -18,12 +19,18 @@ type BDD = (NodeId, [BDDNode])
 
 -- Pre: The item is in the given table
 lookUp :: Eq a => a -> [(a, b)] -> b
-lookUp 
-  = undefined
+lookUp key xs = fromJust (lookup key xs)
+
 
 checkSat :: BDD -> Env -> Bool
-checkSat 
-  = undefined
+checkSat = undefined
+{-
+checkSat bdd env b = checkSat' (lookUp 2 nodes)
+  where
+    (id, nodes) = bdd
+    checkSat'   = undefined
+-}
+
 
 sat :: BDD -> [[(Index, Bool)]]
 sat 
