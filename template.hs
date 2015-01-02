@@ -23,18 +23,38 @@ lookUp key xs = fromJust (lookup key xs)
 
 
 checkSat :: BDD -> Env -> Bool
-checkSat = undefined
-{-
-checkSat bdd env b = checkSat' (lookUp 2 nodes)
+checkSat bdd env
+  | nodeID < 2 = intToBool nodeID
+  | otherwise  = checkSat' nodeID
   where
-    (id, nodes) = bdd
-    checkSat'   = undefined
--}
+    (nodeID, nodes) = bdd
+    checkSat' 0 = False
+    checkSat' 1 = True
+    checkSat' n
+      | lookUp ind env = checkSat' rn
+      | otherwise      = checkSat' ln
+      where (ind, ln, rn) = lookUp n nodes
+
+intToBool :: Int -> Bool
+-- Pre: n < 2
+-- Post: Returns 0 as False, 1 as True
+intToBool 0 = False
+intToBool 1 = True
 
 
 sat :: BDD -> [[(Index, Bool)]]
-sat 
-  = undefined
+sat (0, _) = []
+sat bdd = sat' nodeID
+  where
+    (nodeID, nodes) = bdd
+    sat' 0 = []
+    sat' 1 = [[]]
+    sat' n = satL ++ satR
+      where
+        satL = map ((ind, False):) (sat' ln)
+        satR = map ((ind, True):) (sat' rn)
+        (ind, ln, rn) = lookUp n nodes
+
 
 ------------------------------------------------------
 -- PART II
