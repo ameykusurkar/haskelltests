@@ -60,12 +60,35 @@ sat bdd = sat' nodeID
 -- PART II
 
 simplify :: BExp -> BExp
-simplify 
-  = undefined
+simplify (Not (Prim b)) 
+  = Prim (not b)
+simplify (Not e)
+  = Not e
+simplify (And (Prim True) (Prim True))
+  = Prim True
+simplify (And (Prim _) (Prim _))
+  = Prim False
+simplify (And e1 e2)
+  = And e1 e2
+simplify (Or (Prim False) (Prim False))
+  = Prim False
+simplify (Or (Prim _) (Prim _))
+  = Prim True
+simplify (Or e1 e2)
+  = (Or e1 e2)
 
 restrict :: BExp -> Index -> Bool -> BExp
-restrict 
-  = undefined
+restrict (IdRef n) ind b
+  | ind == n  = Prim b
+  | otherwise = IdRef n
+restrict (Prim b) _ _ 
+  = Prim b
+restrict (Not bexp) ind b
+  = simplify (Not (restrict bexp ind b))
+restrict (And bexp1 bexp2) ind b
+  = simplify (And (restrict bexp1 ind b) (restrict bexp2 ind b))
+restrict (Or bexp1 bexp2) ind b
+  = simplify (Or (restrict bexp1 ind b) (restrict bexp2 ind b))
 
 ------------------------------------------------------
 -- PART III
@@ -75,13 +98,12 @@ restrict
 -- The question suggests the following definition (in terms of buildBDD')
 -- but you are free to implement the function differently if you wish.
 buildBDD :: BExp -> [Index] -> BDD
-buildBDD 
-  = undefined
+buildBDD e xs = buildBDD' e 2 xs
 
 -- Potential helper function for buildBDD which you are free
 -- to define/modify/ignore/delete/embed as you see fit.
 buildBDD' :: BExp -> NodeId -> [Index] -> BDD
-buildBDD' 
+buildBDD' bexp n (x:xs)
   = undefined
 
 ------------------------------------------------------
