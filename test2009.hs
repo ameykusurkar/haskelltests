@@ -103,8 +103,17 @@ buildBDD e xs = buildBDD' e 2 xs
 -- Potential helper function for buildBDD which you are free
 -- to define/modify/ignore/delete/embed as you see fit.
 buildBDD' :: BExp -> NodeId -> [Index] -> BDD
-buildBDD' bexp n (x:xs)
-  = undefined
+buildBDD' (Prim b) n [] = (boolToInt b, [])
+buildBDD' bexp n (x:xs) = (n, currNode:(lns ++ rns))
+  where
+    currNode = ( n, (x, idl, idr) )
+    (idl, lns) = buildBDD' (restrict bexp x False) (2*n) xs
+    (idr, rns) = buildBDD' (restrict bexp x True) (2*n + 1) xs
+
+boolToInt :: Bool -> Int
+-- Returns False as 0, True as 1
+boolToInt False = 0
+boolToInt True  = 1
 
 ------------------------------------------------------
 -- PART IV
