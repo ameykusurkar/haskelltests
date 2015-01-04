@@ -124,6 +124,14 @@ buildROBDD :: BExp -> [Index] -> BDD
 buildROBDD 
   = undefined
 
+sameSubtree :: BExp -> Index -> Bool
+-- Returns True if the expression returns the same substrees
+-- for both False and True
+sameSubtree e ind = (ln == rn)
+  where
+    ln = restrict e ind False
+    rn = restrict e ind True
+
 ------------------------------------------------------
 -- Examples for testing...
 
