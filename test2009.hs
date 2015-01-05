@@ -121,8 +121,19 @@ boolToInt True  = 1
 -- Pre: Each variable index in the BExp appears exactly once
 --      in the Index list; there are no other elements
 buildROBDD :: BExp -> [Index] -> BDD
-buildROBDD 
-  = undefined
+buildROBDD e xs = buildROBDD' e 2 xs
+
+buildROBDD' :: BExp -> NodeId -> [Index] -> BDD
+buildROBDD' (Prim b) n [] = (boolToInt b, [])
+buildROBDD' bexp n (x:xs) = if   sameSubtree bexp x
+                            then (n, currNode1:lns)
+                            else (n, currNode2:(lns ++ rns))
+  where
+    currNode1  = ( n, (x, idl, idl) ) 
+    currNode2  = ( n, (x, idl, idr) )
+    (idl, lns) = buildROBDD' (restrict bexp x False) (2*n) xs
+    (idr, rns) = buildROBDD' (restrict bexp x True) (2*n + 1) xs
+
 
 sameSubtree :: BExp -> Index -> Bool
 -- Returns True if the expression returns the same substrees
