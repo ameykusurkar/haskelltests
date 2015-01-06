@@ -4,45 +4,61 @@ data SuffixTree = Leaf Int | Node [(String, SuffixTree)]
 ------------------------------------------------------
 
 isPrefix :: String -> String -> Bool
-isPrefix 
-  = undefined
+isPrefix [] _ = True
+isPrefix _ [] = False
+isPrefix (s:ss) (t:ts) = (s == t) && (isPrefix ss ts)
 
 removePrefix :: String -> String -> String
-removePrefix
 --Pre: s is a prefix of s'
-  = undefined
+removePrefix s = drop (length s)
 
 suffixes :: [a] -> [[a]]
-suffixes
-  = undefined
+suffixes ls = take (length ls) (iterate tail ls)
 
 isSubstring :: String -> String -> Bool
-isSubstring
-  = undefined
+isSubstring s t = any (isPrefix s) (suffixes t)
 
 findSubstrings :: String -> String -> [Int]
-findSubstrings
-  = undefined
+findSubstrings s t = ((map snd) . (filter (id.fst))) (zip isSubList [0..])
+  where isSubList = (map (isPrefix s) (suffixes t))
 
 ------------------------------------------------------
 
 getIndices :: SuffixTree -> [Int]
-getIndices 
-  = undefined
+getIndices (Leaf n)     = [n]
+getIndices (Node nodes) = concatMap (getIndices . snd) nodes
 
 partition :: Eq a => [a] -> [a] -> ([a], [a], [a])
-partition 
-  = undefined
+partition l1 l2  = part l1 l2 []
+  where
+    part [] ys pref = (pref, [], ys)
+    part xs [] pref = (pref, xs, [])
+    part (x:xs) (y:ys) pref
+      | x /= y    = (pref, (x:xs), (y:ys))
+      | otherwise = part xs ys (pref++[x])
 
 findSubstrings' :: String -> SuffixTree -> [Int]
-findSubstrings'
-  = undefined
+findSubstrings' "" (Leaf n) = [n]
+findSubstrings' _  (Leaf _) = []
+findSubstrings' ss (Node nodes) = concat (map getIndex nodes)
+  where
+    getIndex (str, tree)
+      | ss' == ""  = getIndices tree
+      | str' == "" = findSubstrings' ss' tree
+      | otherwise  = []
+      where (pre, ss', str') = partition ss str
 
 ------------------------------------------------------
 
 insert :: (String, Int) -> SuffixTree -> SuffixTree
-insert 
-  = undefined
+insert (s, n) (Node []) = Node [(s, Leaf n)]
+insert (s, n) nd@( Node ((str, tree):nodes) )
+  | pre == ""  = addNode (str, tree) (insert (s, n) (Node nodes))
+  | pre == str = Node ((str, insert (remS, n) tree) : nodes)
+  | otherwise  = Node ([(pre, Node [(remS, Leaf n), (remStr, tree)])]++nodes)
+    where 
+      (pre, remS, remStr) = partition s str
+      addNode nd (Node nds) = Node (nd:nds)
 
 -- This function is given
 buildTree :: String -> SuffixTree 
