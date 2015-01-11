@@ -30,39 +30,70 @@ extractMin = minimum . (map key)
 
 
 mergeHeaps :: Ord a => BinHeap a -> BinHeap a -> BinHeap a
-mergeHeaps 
-  = undefined
+mergeHeaps h [] = h
+mergeHeaps [] h = h
+mergeHeaps h@(t:ts) h'@(t':ts')
+  | rank t < rank t'  = t : (mergeHeaps ts  h')
+  | rank t > rank t'  = t': (mergeHeaps ts' h )
+  | rank t == rank t' = mergeHeaps [combineTrees t t'] (mergeHeaps ts ts')
 
 insert :: Ord a => a -> BinHeap a -> BinHeap a
-insert 
-  = undefined
+insert x h = mergeHeaps [Node x 0 []] h
 
 deleteMin :: Ord a => BinHeap a -> BinHeap a
-deleteMin 
-  = undefined
+deleteMin (t:ts)
+  | key t == minVal = mergeHeaps childHeap ts
+  | otherwise       = mergeHeaps [t] (deleteMin ts)
+    where 
+      minVal    = extractMin (t:ts)
+      childHeap = (reverse . children) t
 
 remove :: Eq a => a -> BinHeap a -> BinHeap a
-remove
-  = undefined
+remove x 
+  = undefined 
 
 removeMin :: Ord a => BinHeap a -> (BinTree a, BinHeap a)
 removeMin
   = undefined
 
 binSort :: Ord a => [a] -> [a]
-binSort 
-  = undefined
+binSort = extractHeap . makeHeap
+  where
+    makeHeap xs    = foldr insert [] xs
+    extractHeap [] = []
+    extractHeap ts = (extractMin ts) : extractHeap (deleteMin ts)
 
 --------------------------------------------------------------
 -- PART III
 
 toBinary :: BinHeap a -> [Int]
-toBinary
-  = undefined
+toBinary = (foldl addBin []) . (map rank)
+  where
+    addBin [] n = 1 : (zeros n)
+    addBin ns n = [1] ++ (zeros (n - (length ns))) ++ ns
+    zeros n     = take n (repeat 0)
 
+{-
 binarySum :: [Int] -> [Int] -> [Int]
-binarySum
-  = undefined
+binarySum ns ns' = cr : sm
+  where (sm, cr) = binarySum' ns ns'
+binarySum' [] [] = ([], 0)
+binarySum' ns [] = (ns, 0)
+binarySum' [] ns = (ns, 0)
+binarySum' (n:ns) (n':ns') = (s' : s, car')
+  where
+    (s', car') = adder n n' car
+    (s, car) = binarySum' ns ns'
+
+adder b1 b2 c = (xor (xor b1 b2) c, xor (bitAnd b1 b2) c)
+xor b1 b2 = if (b1 /= b2) then 1 else 0
+nand 1 1 = 0
+nand _ _ = 1
+bitAnd b1 b2 = 1 - (nand b1 b2)
+
+sameNodes h h'
+  = toBinary (mergeHeaps h h') == binarySum (toBinary h) (toBinary h')
+-}
 
 ------------------------------------------------------
 -- Some sample trees...
