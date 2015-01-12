@@ -50,13 +50,14 @@ accepts :: [Id] -> [ProcessDef] -> Bool
 accepts ids defs = accepts' ids (Choice (map snd defs))
   where
     accepts' [] _ = True
-    accepts' (i:ids) pr = (elem i (map getID nActs)) && (accepts' ids (getPR (head (filter ((==i).getID) nActs))))
+    accepts' (i:ids) pr 
+      = (elem i (map getID nActs)) && (accepts' ids (getPR (head (filter ((==i).getID) nActs))))
       where nActs = nextActs pr
-    getID (Prefix i _) = i
+    getID (Prefix i _)  = i
     getPR (Prefix _ pr) = pr
-    nextActs STOP = []
-    nextActs (Ref i') = nextActs (lookUp i' defs)
-    nextActs (Choice prs) = concatMap nextActs prs
+    nextActs STOP           = []
+    nextActs (Ref i')       = nextActs (lookUp i' defs)
+    nextActs (Choice prs)   = concatMap nextActs prs
     nextActs (Prefix i' pr) = [(Prefix i' pr)]
 
 
