@@ -26,9 +26,7 @@ lookUp :: Eq a => a -> [(a, b)] -> b
 lookUp key pairs = fromJust (lookup key pairs)
 
 states :: LTS -> [State]
-states = nub . (foldr addElems []) . (map fst)
-  where 
-    addElems (x, y) ls = x : y : ls
+states = nub . (0:) . (map (snd.fst))
 
 transitions :: State -> LTS -> [Transition]
 transitions n lts = filter ((==n) . fst . fst) lts
@@ -40,51 +38,75 @@ alphabet = nub . (map snd)
 -- PART II
 
 actions :: Process -> [Id]
-actions (Prefix iden pr) = iden : (actions pr)
-actions (Choice prs)     = concatMap actions prs
-actions _                = []
+actions pr = nub (actions' pr)
+  where
+    actions' (Prefix iden pr) = iden : (actions' pr)
+    actions' (Choice prs)     = concatMap actions' prs
+    actions' _                = []
 
 accepts :: [Id] -> [ProcessDef] -> Bool
---Pre: The first item in the list of process definitions is
---     that of the start process.
-accepts ids defs = accepts' ids (Choice (map snd defs))
+accepts as ps = accepts' as (snd (head ps))
   where
-    accepts' [] _ = True
-    accepts' (i:ids) pr 
-      = (elem i (map getID nActs)) && (accepts' ids (getPR (head (filter ((==i).getID) nActs))))
-      where nActs = nextActs pr
-    getID (Prefix i _)  = i
-    getPR (Prefix _ pr) = pr
-    nextActs STOP           = []
-    nextActs (Ref i')       = nextActs (lookUp i' defs)
-    nextActs (Choice prs)   = concatMap nextActs prs
-    nextActs (Prefix i' pr) = [(Prefix i' pr)]
-
+    accepts' []     _            = True
+    accepts' as     STOP         = False
+    accepts' as     (Ref p)      = accepts' as (lookUp p ps)
+    accepts' as     (Choice prs) = any (accepts' as) prs
+    accepts' (a:as) (Prefix a' p)
+      | a == a'   = accepts' as p
+      | otherwise = False
 
 ------------------------------------------------------
 -- PART III
 
---composeTransitions :: Transition -> Transition 
---                   -> Alphabet -> Alphabet 
---                   -> StateMap 
---                   -> [Transition]
+composeTransitions :: Transition -> Transition 
+                   -> Alphabet -> Alphabet 
+                   -> StateMap 
+                   -> [Transition]
 --Pre: The first alphabet is that of the LTS from which the first transition is
 --     drawn; likewise the second.
 --Pre: All (four) pairs of source and target states drawn from the two transitions
 --     are contained in the given StateMap.
-composeTransitions
-  = undefined
+composeTransitions ((s, t), a) ((s', t'), a') a1 a2 m
+  | a == a'                     = [c3]
+  | (elem a' a1) && (elem a a2) = []
+  | elem a' a1                  = [c1]
+  | elem a a2                   = [c2]
+  | otherwise                   = [c1, c2]
+    where
+      ss' = (lookUp (s, s') m)
+      c3  = ((ss', (lookUp (t, t') m)), a)
+      c1  = ((ss', (lookUp (t, s') m)), a)
+      c2  = ((ss', (lookUp (s, t') m)), a')
+
+
+m = [((0,0),0),((0,1),1),((1,0),2),((1,1),3)]
+
 
 pruneTransitions :: [Transition] -> LTS
-pruneTransitions 
-  = undefined
+pruneTransitions ts = nub (visit 0 [])
+  where
+    visit s visited
+      | elem s visited = []
+      | otherwise      = concatMap f (transitions s ts)
+        where
+          f t@((s' ,s''), a) = t : visit s'' (s : visited)
 
 ------------------------------------------------------
 -- PART IV
-
+{-
 compose :: LTS -> LTS -> LTS
-compose 
-  = undefined
+compose lts lts'
+  = pruneTransitions newlts
+  where 
+    alph        = alphabet lts
+    alph'       = alphabet lts'
+    newStates   = [(s,s') | s <- states lts, s' <- states lts']
+    stateMap    = zip newStates [0..] 
+    newlts      = [ composeTransitions t t' alph alph' stateMap |
+                  (s,s') <- newStates,
+                  (t,t') <- prod (transitions s lts) (transitions s' lts')]
+    prod ts ts' = [(tr,tr') | tr <- ts, tr' <- ts']
+-}
 
 ------------------------------------------------------
 -- PART V
