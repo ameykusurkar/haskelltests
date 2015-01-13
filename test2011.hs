@@ -52,10 +52,7 @@ lookUp :: Eq a => a -> [(a, b)] -> b
 lookUp key = fromJust . (lookup key)
 
 tryToLookUp :: Eq a => a -> b -> [(a, b)] -> b
-tryToLookUp key def pairs
-  | isJust value = fromJust value
-  | otherwise    = def
-  where value = lookup key pairs
+tryToLookUp k d ps = fromMaybe d (lookup k ps)
 
 -- Pre: The given value is in the table
 reverseLookUp :: Eq b => b -> [(a, b)] -> [a]
@@ -64,7 +61,7 @@ reverseLookUp val = (map fst) . filter ((==val) . snd)
 occurs :: String -> Type -> Bool
 occurs s (TFun t t') = occurs s t || occurs s t'
 occurs s (TVar s')   = s == s'
-occurs _ _           = False
+occurs s t           = False
 
 ------------------------------------------------------
 -- PART II
@@ -73,25 +70,22 @@ occurs _ _           = False
 -- Pre: All type variables in the expression have a binding in the given 
 --      type environment
 inferType :: Expr -> TEnv -> Type
-inferType (Boolean _)     env = TBool
-inferType (Number _)      env = TInt
+inferType (Boolean n)     env = TBool
+inferType (Number b)      env = TInt
 inferType (Prim str)      env = lookUp str primTypes
 inferType (Id i)          env = lookUp i env
-inferType (Cond e e' e'') env
-  | inferType e env == TBool && sameType e' e'' = inferType e' env
-  | otherwise                                   = TErr
-  where sameType e e' = inferType e env == inferType e' env
-inferType (App f a) env
-  | isFunct typeF = inferApp f a env
-  | otherwise     = TErr
+inferType (Cond p e e') env
+  | tp == TBool && te == te' = te
+  | otherwise                = TErr
   where
-    typeF = inferType f env
-    isFunct (TFun _ _) = True
-    isFunct _          = False
-    inferApp f a env
-      | t == inferType a env = t'
-      | otherwise            = TErr
-      where (TFun t t') = typeF
+    tp  = inferType p env
+    te  = inferType e env
+    te' = inferType e' env
+inferType (App f a) env = inferApp (inferType f env) (inferType a env)
+  where
+    inferApp (TFun t t') t''
+      | t == t''  = t'
+    inferApp t t' = TErr
 
 ------------------------------------------------------
 -- PART III
