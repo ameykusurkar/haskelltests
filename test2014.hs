@@ -58,35 +58,43 @@ simplify (Opt  re)     = Alt re Null
 simplify (Seq  re re') = Seq (simplify re) (simplify re')
 simplify (Alt  re re') = Alt (simplify re) (simplify re')
 simplify (Rep  re)     = Rep (simplify re)
+simplify r             = r
 
 --------------------------------------------------------
 -- Part II
 
 startState :: Automaton -> State
-startState
-  = undefined
+startState (s, ss, ts) = s
+
 terminalStates :: Automaton -> [State]
-terminalStates
-  = undefined
+terminalStates (s, ss, ts) = ss
+
 transitions :: Automaton -> [Transition]
-transitions 
-  = undefined
+transitions (s, ss, ts) = ts
 
 isTerminal :: State -> Automaton -> Bool
-isTerminal 
-  = undefined
+isTerminal s = (elem s) . terminalStates
 
 transitionsFrom :: State -> Automaton -> [Transition]
-transitionsFrom
-  = undefined
+transitionsFrom s = filter ((==s) . getStart) . transitions
+  where getStart (a, b, c) = a
 
 labels :: [Transition] -> [Label]
-labels 
-  = undefined
+labels = nub . filter (/=Eps) . map (\(a, b, c) -> c)
 
 accepts :: Automaton -> String -> Bool
-accepts 
-  = undefined
+accepts a str = accepts' (startState a) str
+  where
+    accepts' s str
+      | isTerminal s a && null str = True
+      | otherwise = any (try str) (transitionsFrom s a)
+        where
+          try str (s, s', Eps) = accepts' s' str
+          try [] (s, s', C c)  = False
+          try (ch:chs) (s, s', C c)
+            | c == ch   = accepts' s' chs
+            | otherwise = False
+           
 
 --------------------------------------------------------
 -- Part III
@@ -98,8 +106,16 @@ makeNDA re
     (transitions, k) = make (simplify re) 1 2 3
 
 make :: RE -> Int -> Int -> Int -> ([Transition], Int)
-make 
-  = undefined
+make Null m n k        = ([(m, n, Eps)], k)
+make (Term c) m n k    = ([(m, n, C c)], k)
+make (Seq r1 r2) m n k = (((k, k+1, Eps):(ts++ts')), s')
+  where (ts, s)   = make r1 m k (k+2) 
+        (ts', s') = make r2 (k+1) n s
+make (Alt r1 r2) m n k = (((m, k, Eps):(m, k+2, Eps):(k+1, n, Eps):(k+3, n, Eps):(ts++ts')), s') 
+  where (ts, s)   = make r1 k (k+1) (k+4)
+        (ts', s') = make r2 (k+2) (k+3) s
+make (Rep r) m n k = (((m, k, Eps):(k+1, k, Eps):(k+1, n, Eps):(m, n, Eps):ts), s)
+  where (ts, s) = make r k (k+1) (k+2)
 
 --------------------------------------------------------
 -- Part IV
